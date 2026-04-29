@@ -1,5 +1,0 @@
-C:/Users/Ahmed Anter/Documents/Smart-Traffic/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/CMakeFiles/Smart-Traffic.dir
-C:/Users/Ahmed Anter/Documents/Smart-Traffic/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/CMakeFiles/edit_cache.dir
-C:/Users/Ahmed Anter/Documents/Smart-Traffic/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/CMakeFiles/rebuild_cache.dir
-C:/Users/Ahmed Anter/Documents/Smart-Traffic/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/CMakeFiles/Smart-Traffic_autogen_timestamp_deps.dir
-C:/Users/Ahmed Anter/Documents/Smart-Traffic/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/CMakeFiles/Smart-Traffic_autogen.dir
