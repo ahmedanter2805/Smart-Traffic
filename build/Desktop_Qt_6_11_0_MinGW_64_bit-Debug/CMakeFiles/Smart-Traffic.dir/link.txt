@@ -1,0 +1,3 @@
+C:\Qt\Tools\CMake_64\bin\cmake.exe -E rm -f CMakeFiles\Smart-Traffic.dir/objects.a
+C:\Qt\Tools\mingw1310_64\bin\ar.exe qc CMakeFiles\Smart-Traffic.dir/objects.a @CMakeFiles\Smart-Traffic.dir\objects1.rsp
+C:\Qt\Tools\mingw1310_64\bin\g++.exe -g -Wl,--whole-archive CMakeFiles\Smart-Traffic.dir/objects.a -Wl,--no-whole-archive -o Smart-Traffic.exe -Wl,--out-implib,libSmart-Traffic.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\Smart-Traffic.dir\linkLibs.rsp

@@ -1,0 +1,34 @@
+#ifndef TRAFFICSTRATEGY_H
+#define TRAFFICSTRATEGY_H
+
+#include "Intersection.h"
+
+// Strategy Interface (Demonstrates Polymorphism)
+class TrafficStrategy {
+protected:
+    std::string lastReason;
+public:
+    virtual ~TrafficStrategy() {}
+    virtual void update(Intersection* intersection, int currentTime) = 0;
+    std::string getLastReason() const { return lastReason; }
+};
+
+// Concrete Strategy: FixedTime (Static timing)
+class FixedTimeStrategy : public TrafficStrategy {
+private:
+    int greenDuration;
+    int currentActiveRoad;
+    int lastSwitchTime;
+
+public:
+    FixedTimeStrategy(int greenDuration);
+    void update(Intersection* intersection, int currentTime) override;
+};
+
+// Concrete Strategy: SmartAdaptive (Dynamic timing)
+class SmartAdaptiveStrategy : public TrafficStrategy {
+public:
+    void update(Intersection* intersection, int currentTime) override;
+};
+
+#endif
