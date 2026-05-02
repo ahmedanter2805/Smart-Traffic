@@ -17,7 +17,7 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowTitle("Smart Traffic Mega City Grid");
     resize(1400, 900);
 
-    fixedStrategy = new FixedTimeStrategy(5);
+    fixedStrategy = new FixedTimeStrategy(25);
     smartStrategy = new SmartAdaptiveStrategy();
 
     // Initialize 6 Intersections (3 Columns x 2 Rows)
@@ -49,7 +49,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &MainWindow::updateSimulation);
-    timer->start(150); 
+    timer->start(250); 
 }
 
 MainWindow::~MainWindow() {

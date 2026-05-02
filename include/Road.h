@@ -3,13 +3,14 @@
 
 #include <string>
 #include <queue>
+#include <deque>
 #include "Vehicle.h"
 
 // Road Class (Demonstrates Encapsulation and Composition)
 class Road {
 private:
     std::string name;
-    std::queue<Vehicle*> vehicleQueue;
+    std::deque<Vehicle*> vehicleQueue;
 
 public:
     Road(std::string name);
@@ -24,7 +25,7 @@ public:
     void updateWaitingTimes();
     
     // Added for visualization
-    std::queue<Vehicle*> getVehicles() const { return vehicleQueue; }
+    std::queue<Vehicle*> getVehicles() const { return std::queue<Vehicle*>(vehicleQueue); }
 };
 
 #endif

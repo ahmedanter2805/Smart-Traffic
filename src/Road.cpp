@@ -3,31 +3,37 @@
 Road::Road(std::string name) : name(name) {}
 
 Road::~Road() {
-    while (!vehicleQueue.empty()) {
-        delete vehicleQueue.front();
-        vehicleQueue.pop();
+    for (Vehicle* v : vehicleQueue) {
+        delete v;
     }
+    vehicleQueue.clear();
 }
 
 void Road::addVehicle(Vehicle* v) {
-    vehicleQueue.push(v);
+    vehicleQueue.push_back(v);
 }
 
 Vehicle* Road::removeVehicle() {
     if (vehicleQueue.empty()) return nullptr;
+    
+    // Bypass logic: Find the first priority vehicle and let it pass
+    for (auto it = vehicleQueue.begin(); it != vehicleQueue.end(); ++it) {
+        if ((*it)->isPriority()) {
+            Vehicle* v = *it;
+            vehicleQueue.erase(it);
+            return v;
+        }
+    }
+    
+    // Default FIFO logic if no priority vehicle is found
     Vehicle* v = vehicleQueue.front();
-    vehicleQueue.pop();
+    vehicleQueue.pop_front();
     return v;
 }
 
 bool Road::hasPriorityVehicle() const {
-    // Check if any vehicle in the queue is a priority vehicle
-    // Note: In a real simulation, we might only check the first few vehicles
-    // but for simplicity, we check the whole queue.
-    std::queue<Vehicle*> temp = vehicleQueue;
-    while (!temp.empty()) {
-        if (temp.front()->isPriority()) return true;
-        temp.pop();
+    for (Vehicle* v : vehicleQueue) {
+        if (v->isPriority()) return true;
     }
     return false;
 }
@@ -41,12 +47,7 @@ std::string Road::getName() const {
 }
 
 void Road::updateWaitingTimes() {
-    std::queue<Vehicle*> temp;
-    while (!vehicleQueue.empty()) {
-        Vehicle* v = vehicleQueue.front();
+    for (Vehicle* v : vehicleQueue) {
         v->incrementWait();
-        temp.push(v);
-        vehicleQueue.pop();
     }
-    vehicleQueue = temp;
 }
