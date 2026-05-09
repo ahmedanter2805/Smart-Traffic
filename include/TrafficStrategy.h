@@ -6,11 +6,11 @@
 // Strategy Interface (Demonstrates Polymorphism)
 class TrafficStrategy {
 protected:
-    std::string lastReason;
+    string lastReason;
 public:
     virtual ~TrafficStrategy() {}
     virtual void update(Intersection* intersection, int currentTime) = 0;
-    std::string getLastReason() const { return lastReason; }
+    string getLastReason() const { return lastReason; }
 };
 
 // Concrete Strategy: FixedTime (Static timing)

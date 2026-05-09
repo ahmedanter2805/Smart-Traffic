@@ -1,4 +1,6 @@
 #include "TrafficLight.h"
+using namespace std;
+
 
 TrafficLight::TrafficLight() : state(LightState::RED) {}
 
@@ -10,7 +12,7 @@ LightState TrafficLight::getState() const {
     return state;
 }
 
-std::string TrafficLight::getStateString() const {
+string TrafficLight::getStateString() const {
     switch (state) {
         case LightState::RED: return "RED";
         case LightState::YELLOW: return "YELLOW";

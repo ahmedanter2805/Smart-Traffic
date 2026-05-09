@@ -13,7 +13,7 @@ void FixedTimeStrategy::update(Intersection* intersection, int currentTime) {
         currentActiveRoad = (currentActiveRoad + 1) % lights.size();
         lastSwitchTime = currentTime;
     }
-    lastReason = "Fixed Rotation (Next in " + std::to_string(greenDuration - (currentTime - lastSwitchTime)) + "s)";
+    lastReason = "Fixed Rotation (Next in " + to_string(greenDuration - (currentTime - lastSwitchTime)) + "s)";
 
     // Set lights
     for (size_t i = 0; i < lights.size(); ++i) {

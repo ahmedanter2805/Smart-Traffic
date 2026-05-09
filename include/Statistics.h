@@ -2,6 +2,8 @@
 #define STATISTICS_H
 
 #include <vector>
+using namespace std;
+
 
 class Statistics {
 private:

@@ -5,15 +5,17 @@
 #include <queue>
 #include <deque>
 #include "Vehicle.h"
+using namespace std;
+
 
 // Road Class (Demonstrates Encapsulation and Composition)
 class Road {
 private:
-    std::string name;
-    std::deque<Vehicle*> vehicleQueue;
+    string name;
+    deque<Vehicle*> vehicleQueue;
 
 public:
-    Road(std::string name);
+    Road(string name);
     ~Road();
 
     void addVehicle(Vehicle* v);
@@ -21,11 +23,11 @@ public:
     
     bool hasPriorityVehicle() const;
     int getVehicleCount() const;
-    std::string getName() const;
+    string getName() const;
     void updateWaitingTimes();
     
     // Added for visualization
-    std::queue<Vehicle*> getVehicles() const { return std::queue<Vehicle*>(vehicleQueue); }
+    queue<Vehicle*> getVehicles() const { return queue<Vehicle*>(vehicleQueue); }
 };
 
 #endif

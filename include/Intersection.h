@@ -4,11 +4,13 @@
 #include <vector>
 #include "Road.h"
 #include "TrafficLight.h"
+using namespace std;
+
 
 class Intersection {
 private:
-    std::vector<Road*> roads;
-    std::vector<TrafficLight*> lights;
+    vector<Road*> roads;
+    vector<TrafficLight*> lights;
 
 public:
     Intersection();
@@ -17,8 +19,8 @@ public:
     void addRoad(Road* road);
     void addLight(TrafficLight* light);
 
-    const std::vector<Road*>& getRoads() const;
-    const std::vector<TrafficLight*>& getLights() const;
+    const vector<Road*>& getRoads() const;
+    const vector<TrafficLight*>& getLights() const;
 
     void displayState() const;
 };

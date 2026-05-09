@@ -2,6 +2,8 @@
 #define TRAFFICLIGHT_H
 
 #include <string>
+using namespace std;
+
 
 enum class LightState { RED, YELLOW, GREEN };
 
@@ -13,7 +15,7 @@ public:
     TrafficLight();
     void setState(LightState newState);
     LightState getState() const;
-    std::string getStateString() const;
+    string getStateString() const;
 };
 
 #endif

@@ -1,6 +1,8 @@
 #include "Road.h"
+using namespace std;
 
-Road::Road(std::string name) : name(name) {}
+
+Road::Road(string name) : name(name) {}
 
 Road::~Road() {
     for (Vehicle* v : vehicleQueue) {
@@ -42,7 +44,7 @@ int Road::getVehicleCount() const {
     return vehicleQueue.size();
 }
 
-std::string Road::getName() const {
+string Road::getName() const {
     return name;
 }
 

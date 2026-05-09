@@ -1,5 +1,7 @@
 #include "Statistics.h"
 #include <iostream>
+using namespace std;
+
 
 Statistics::Statistics() 
     : totalVehiclesPassed(0), totalWaitTime(0), maxQueueLength(0) {}
@@ -21,13 +23,13 @@ double Statistics::getAverageWaitingTime() const {
 }
 
 void Statistics::displayReport() const {
-    std::cout << "\n========== SIMULATION STATISTICS ==========" << std::endl;
-    std::cout << "Total Vehicles Passed: " << totalVehiclesPassed << std::endl;
+    cout << "\n========== SIMULATION STATISTICS ==========" << endl;
+    cout << "Total Vehicles Passed: " << totalVehiclesPassed << endl;
     if (totalVehiclesPassed > 0) {
-        std::cout << "Average Waiting Time: " << (double)totalWaitTime / totalVehiclesPassed << " steps" << std::endl;
+        cout << "Average Waiting Time: " << (double)totalWaitTime / totalVehiclesPassed << " steps" << endl;
     } else {
-        std::cout << "Average Waiting Time: 0 steps" << std::endl;
+        cout << "Average Waiting Time: 0 steps" << endl;
     }
-    std::cout << "Maximum Queue Length Observed: " << maxQueueLength << std::endl;
-    std::cout << "===========================================" << std::endl;
+    cout << "Maximum Queue Length Observed: " << maxQueueLength << endl;
+    cout << "===========================================" << endl;
 }

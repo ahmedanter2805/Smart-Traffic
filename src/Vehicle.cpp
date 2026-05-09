@@ -1,4 +1,6 @@
 #include "Vehicle.h"
+using namespace std;
+
 
 Vehicle::Vehicle(int id, int arrivalTime) : id(id), arrivalTime(arrivalTime), waitingTime(0) {}
 
@@ -23,7 +25,7 @@ bool NormalVehicle::isPriority() const {
     return false;
 }
 
-std::string NormalVehicle::getType() const {
+string NormalVehicle::getType() const {
     return "Normal";
 }
 

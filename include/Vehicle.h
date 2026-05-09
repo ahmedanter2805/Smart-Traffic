@@ -2,6 +2,8 @@
 #define VEHICLE_H
 
 #include <string>
+using namespace std;
+
 
 // Base Class: Vehicle (Demonstrates Abstraction and Encapsulation)
 class Vehicle {
@@ -16,7 +18,7 @@ public:
 
     // Virtual function (Demonstrates Polymorphism)
     virtual bool isPriority() const = 0;
-    virtual std::string getType() const = 0;
+    virtual string getType() const = 0;
 
     void incrementWait();
     int getWaitingTime() const;
@@ -28,7 +30,7 @@ class NormalVehicle : public Vehicle {
 public:
     NormalVehicle(int id, int arrivalTime);
     bool isPriority() const override;
-    std::string getType() const override;
+    string getType() const override;
 };
 
 // Derived Class: PriorityVehicle (Demonstrates Inheritance)
@@ -41,13 +43,13 @@ public:
 class Ambulance : public PriorityVehicle {
 public:
     using PriorityVehicle::PriorityVehicle;
-    std::string getType() const override { return "Ambulance"; }
+    string getType() const override { return "Ambulance"; }
 };
 
 class PoliceCar : public PriorityVehicle {
 public:
     using PriorityVehicle::PriorityVehicle;
-    std::string getType() const override { return "Police"; }
+    string getType() const override { return "Police"; }
 };
 
 #endif

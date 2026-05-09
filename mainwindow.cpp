@@ -1,5 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+using namespace std;
+
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
