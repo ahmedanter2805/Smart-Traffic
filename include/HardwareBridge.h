@@ -16,12 +16,13 @@ public:
         targetAddress = QHostAddress(ip);
     }
 
-    void sendStatus(const QString& lightState, int carCount, int emergencyType = 0, int violatorId = -1) {
+    void sendStatus(const QString& lightStates, int carCount, int emergencyType = 0, int violatorId = -1) {
         if (targetAddress.isNull()) return;
 
-        // Protocol: L:[State]|C:[Count]|E:[Type]|V:[ViolatorID]
+        // Protocol: L:[R1R2R3R4]|C:[Count]|E:[Type]|V:[ViolatorID]
+        // Example: L:GRRR|C:15|E:1|V:42
         QString data = QString("L:%1|C:%2|E:%3|V:%4")
-                        .arg(lightState)
+                        .arg(lightStates)
                         .arg(carCount)
                         .arg(emergencyType)
                         .arg(violatorId);

@@ -12,6 +12,7 @@
 #include "TrafficStrategy.h"
 #include "AITrafficOptimizer.h"
 #include "HardwareBridge.h"
+#include "FireTruck.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -31,6 +32,7 @@ private slots:
     void updateSimulation();
     void toggleStrategy();
     void toggleHardware();
+    void spawnVehicle(QString type);
 
 private:
     Ui::MainWindow *ui;
@@ -56,6 +58,7 @@ private:
     QPixmap pixNormal;
     QPixmap pixAmbulance;
     QPixmap pixPolice;
+    QPixmap pixFireTruck;
 };
 
 #endif // MAINWINDOW_H

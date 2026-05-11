@@ -9,143 +9,106 @@
 const char* ssid = "AHMED ANTER 2.4G";
 const char* password = "19712805Aa#";
 
-// --- UDP CONFIG ---
-WiFiUDP udp;
-const int udpPort = 4210;
+// --- LED PINS (12 LEDs) ---
+const int L_N[] = {25, 26, 27}; 
+const int L_S[] = {14, 12, 13};
+const int L_W[] = {2, 4, 5};
+const int L_E[] = {18, 19, 23};
 
-// --- HARDWARE PINS ---
-const int RED_LED = 25;
-const int YELLOW_LED = 26;
-const int GREEN_LED = 27;
-const int BUZZER = 33;
+const int BUZZER_SIREN = 33;
+const int BUZZER_ALARM = 32;
 
-// --- OLED DISPLAY ---
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
+WiFiUDP udp;
 
-void playSiren(int type) {
-    if (type == 1) { // Ambulance - Wailing
-        for(int hz = 600; hz < 1200; hz += 5) { tone(BUZZER, hz); delay(5); }
-        for(int hz = 1200; hz > 600; hz -= 5) { tone(BUZZER, hz); delay(5); }
-    } else if (type == 2) { // Police - Yelping
-        for(int i=0; i<3; i++) {
-            tone(BUZZER, 800); delay(100); 
-            tone(BUZZER, 1200); delay(100);
-        }
-    }
-    noTone(BUZZER);
-}
-
-void setup() {
-    Serial.begin(115200);
-    
-    pinMode(RED_LED, OUTPUT);
-    pinMode(YELLOW_LED, OUTPUT);
-    pinMode(GREEN_LED, OUTPUT);
-    pinMode(BUZZER, OUTPUT);
-
-    // Initial OLED setup - Try both common addresses
-    if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
-        if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3D)) {
-            Serial.println("OLED failed on both 0x3C and 0x3D");
-        }
-    }
-    
-    // Test Buzzer on startup
-    digitalWrite(BUZZER, HIGH); delay(100); digitalWrite(BUZZER, LOW);
-    tone(BUZZER, 1000, 200); 
-
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.setCursor(0, 20);
-    display.println("Connecting to WiFi...");
-    display.display();
-
-    WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
-    }
-
-    Serial.println("\nWiFi Connected!");
-    Serial.print("IP Address: ");
-    Serial.println(WiFi.localIP());
-
-    udp.begin(udpPort);
-
-    display.clearDisplay();
-    display.setCursor(0, 0);
-    display.println("TRAFFIC IOT NODE");
-    display.drawLine(0, 10, 128, 10, WHITE);
-    display.setCursor(0, 20);
-    display.println("IP: " + WiFi.localIP().toString());
-    display.println("Status: READY");
-    display.display();
+void setRoadLights(const int pins[], char state) {
+    digitalWrite(pins[0], state == 'R');
+    digitalWrite(pins[1], state == 'Y');
+    digitalWrite(pins[2], state == 'G');
 }
 
 unsigned long lastSirenTime = 0;
 int sirenState = 0;
 
 void handleSirens(int type) {
-    if (type == 0) { noTone(BUZZER); return; }
-    
+    if (type == 0) { noTone(BUZZER_SIREN); return; }
     unsigned long now = millis();
-    if (type == 1) { // Ambulance - Piercing High-Low
-        if (now - lastSirenTime > 250) {
-            sirenState = !sirenState;
-            tone(BUZZER, sirenState ? 2500 : 3500); // Higher frequencies for more volume
-            lastSirenTime = now;
-        }
-    } else if (type == 2) { // Police - Rapid Yelp
-        if (now - lastSirenTime > 150) {
-            sirenState = !sirenState;
-            tone(BUZZER, sirenState ? 2000 : 3000);
-            lastSirenTime = now;
-        }
+    if (type == 1 && now - lastSirenTime > 200) { 
+        sirenState = !sirenState; tone(BUZZER_SIREN, sirenState ? 1500 : 2500); lastSirenTime = now;
+    } else if (type == 2 && now - lastSirenTime > 100) { 
+        sirenState = !sirenState; tone(BUZZER_SIREN, sirenState ? 1000 : 3000); lastSirenTime = now;
+    } else if (type == 3 && now - lastSirenTime > 400) { 
+        sirenState = !sirenState; tone(BUZZER_SIREN, sirenState ? 600 : 1800); lastSirenTime = now;
     }
+}
+
+void setup() {
+    Serial.begin(115200);
+    int allPins[] = {25,26,27,14,12,13,2,4,5,18,19,23,33,32};
+    for(int p : allPins) pinMode(p, OUTPUT);
+
+    if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+        display.begin(SSD1306_SWITCHCAPVCC, 0x3D);
+    }
+    
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0, 10);
+    display.println("Connecting to WiFi...");
+    display.display();
+
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED) { delay(500); }
+    udp.begin(4210);
+    
+    display.clearDisplay();
+    display.println("MEGA CITY IoT READY");
+    display.println("IP: " + WiFi.localIP().toString());
+    display.display();
 }
 
 void loop() {
     int packetSize = udp.parsePacket();
     if (packetSize) {
-        char incomingPacket[255];
-        int len = udp.read(incomingPacket, 255);
-        if (len > 0) incomingPacket[len] = 0;
-        String data = String(incomingPacket);
+        char buf[255]; int len = udp.read(buf, 255); if (len > 0) buf[len] = 0;
+        String data = String(buf);
 
-        // Instant LED Update
-        if (data.indexOf("L:G") > -1) { digitalWrite(GREEN_LED, 1); digitalWrite(RED_LED, 0); digitalWrite(YELLOW_LED, 0); }
-        else if (data.indexOf("L:Y") > -1) { digitalWrite(YELLOW_LED, 1); digitalWrite(RED_LED, 0); digitalWrite(GREEN_LED, 0); }
-        else if (data.indexOf("L:R") > -1) { digitalWrite(RED_LED, 1); digitalWrite(GREEN_LED, 0); digitalWrite(YELLOW_LED, 0); }
+        if (data.indexOf("L:") > -1) {
+            int s = data.indexOf("L:") + 2;
+            setRoadLights(L_N, data[s]); setRoadLights(L_S, data[s+1]);
+            setRoadLights(L_W, data[s+2]); setRoadLights(L_E, data[s+3]);
+        }
 
-        // OLED Update
         display.clearDisplay();
-        display.setCursor(0, 0);
-        display.println("SMART TRAFFIC IoT");
-        display.drawLine(0, 10, 128, 10, WHITE);
-        display.setCursor(0, 20);
+        display.setCursor(0,0);
+        display.println("CITY CONTROL CENTER");
+        display.drawLine(0, 8, 128, 8, WHITE);
+        
+        display.setCursor(0, 10);
+        int lIdx = data.indexOf("L:") + 2;
+        display.printf("N:%c S:%c W:%c E:%c\n", data[lIdx], data[lIdx+1], data[lIdx+2], data[lIdx+3]);
         
         if (data.indexOf("C:") > -1) {
-            int start = data.indexOf("C:") + 2;
-            int end = data.indexOf("|", start);
-            display.println("Cars: " + data.substring(start, (end == -1 ? data.length() : end)));
+            int s = data.indexOf("C:")+2; int e = data.indexOf("|", s);
+            display.println("Vehicles: " + data.substring(s, e));
         }
-        
+
         if (data.indexOf("V:") > -1) {
             int vStart = data.indexOf("V:") + 2;
             String vID = data.substring(vStart);
             if (vID.toInt() != -1) {
-                display.fillRect(0, 30, 128, 20, WHITE);
-                display.setTextColor(BLACK);
-                display.setCursor(5, 35);
-                display.println("!! VIOLATION: #" + vID);
+                display.fillRect(0, 32, 128, 12, WHITE);
+                display.setTextColor(BLACK); display.setCursor(2, 34);
+                display.println("!! TICKET CAR #" + vID);
                 display.setTextColor(WHITE);
-                tone(BUZZER, 4000, 500); // Sharp alarm for violation
+                tone(BUZZER_ALARM, 3000, 200); 
             }
         }
-        
-        if (data.indexOf("E:1") > -1) { display.setCursor(0, 55); display.println("EMERGENCY: AMB"); handleSirens(1); }
-        else if (data.indexOf("E:2") > -1) { display.setCursor(0, 55); display.println("EMERGENCY: POL"); handleSirens(2); }
+
+        if (data.indexOf("E:1") > -1) { display.setCursor(0, 50); display.println("ALRT: AMBULANCE"); handleSirens(1); }
+        else if (data.indexOf("E:2") > -1) { display.setCursor(0, 50); display.println("ALRT: POLICE"); handleSirens(2); }
+        else if (data.indexOf("E:3") > -1) { display.setCursor(0, 50); display.println("ALRT: FIRE TRUCK"); handleSirens(3); }
         else { handleSirens(0); }
 
         display.display();

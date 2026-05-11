@@ -427,6 +427,21 @@ class Ambulance : public PriorityVehicle { ... };</code></pre>
         </div>
     </div>
 
+    <div class="section-title">ثامناً: تقنيات المدينة الذكية المتقدمة (Mega City)</div>
+    <div class="card">
+        <div class="badge">Advanced IoT & Hardware</div>
+        <div class="question">كيف تدير نظام الـ 12 ليد والتحكم في 4 طرق في آن واحد؟</div>
+        <div class="answer">
+            قمت بتطوير بروتوكول UDP ليرسل حالة مجمعة للأربع إشارات في حزمة واحدة <span class="keyword">L:GRRR</span>. الـ ESP32 يقوم بتفكيكها وتوزيع الأوامر على 4 مجموعات من الليدات، مما يحقق تزامن 100% بين السيميوليشن والحقيقة.
+        </div>
+    </div>
+    <div class="card">
+        <div class="badge">Emergency Protocols</div>
+        <div class="question">اشرح كيف تتعامل مع "حالة الطوارئ القصوى" (سيارة المطافئ)؟</div>
+        <div class="answer">
+            تمت إضافة سيارة المطافئ كنوع ثالث من سيارات الطوارئ <span class="keyword">FireTruck</span>. عند ظهورها، يتم تفعيل كود طوارئ خاص يغير نغمة الإنذار لنغمة مميزة ويجعل الإشارات تفتح لها فوراً لضمان سرعة الاستجابة للحرائق.
+        </div>
+    </div>
 </div>
 
 <footer>

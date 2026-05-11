@@ -77,10 +77,26 @@ MainWindow::MainWindow(QWidget *parent)
     connect(btnToggle, &QPushButton::clicked, this, &MainWindow::toggleStrategy);
     connect(btnHardware, &QPushButton::clicked, this, &MainWindow::toggleHardware);
 
-    layout->addWidget(btnToggle);
-    layout->addWidget(btnHardware);
+    // Emergency Controls
+    QPushButton* btnAmb = new QPushButton("🚑 Spawn Ambulance", this);
+    QPushButton* btnPol = new QPushButton("🚔 Spawn Police", this);
+    QPushButton* btnFire = new QPushButton("🚒 Spawn Fire Truck", this);
+    
+    QString eStyle = "QPushButton { background: %1; color: white; border-radius: 10px; font-weight: bold; padding: 5px; }";
+    btnAmb->setStyleSheet(eStyle.arg("#2ecc71"));
+    btnPol->setStyleSheet(eStyle.arg("#3498db"));
+    btnFire->setStyleSheet(eStyle.arg("#e74c3c"));
+
+    layout->addWidget(btnAmb);
+    layout->addWidget(btnPol);
+    layout->addWidget(btnFire);
+
+    connect(btnAmb, &QPushButton::clicked, this, [=](){ spawnVehicle("Ambulance"); });
+    connect(btnPol, &QPushButton::clicked, this, [=](){ spawnVehicle("Police"); });
+    connect(btnFire, &QPushButton::clicked, this, [=](){ spawnVehicle("FireTruck"); });
+
     overlay->setLayout(layout);
-    overlay->setGeometry(20, 20, 250, 150);
+    overlay->setGeometry(20, 20, 250, 300);
 
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &MainWindow::updateSimulation);
@@ -137,6 +153,20 @@ void MainWindow::toggleHardware() {
     }
 }
 
+void MainWindow::spawnVehicle(QString type) {
+    if (intersections.empty()) return;
+    auto& roads = intersections[0]->getRoads();
+    Road* road = roads[rand() % roads.size()];
+    
+    Vehicle* v = nullptr;
+    if (type == "Ambulance") v = new Ambulance(vehicleIdCounter++, 0, 0, 0);
+    else if (type == "Police") v = new PoliceCar(vehicleIdCounter++, 0, 0, 0);
+    else if (type == "FireTruck") v = new FireTruck(vehicleIdCounter++, 0, 0, 0);
+    else v = new NormalVehicle(vehicleIdCounter++, 0, 0, 0);
+    
+    if (v) road->addVehicle(v);
+}
+
 void MainWindow::updateSimulation() {
     currentStep++;
 
@@ -144,12 +174,11 @@ void MainWindow::updateSimulation() {
     for (auto inter : intersections) {
         for (Road* road : inter->getRoads()) {
             if (rand() % 1000 < 15) { 
-                Vehicle* v;
                 int r = rand() % 100;
-                if (r < 8) v = new Ambulance(vehicleIdCounter++, currentStep); 
-                else if (r < 16) v = new PoliceCar(vehicleIdCounter++, currentStep); 
-                else v = new NormalVehicle(vehicleIdCounter++, currentStep);
-                road->addVehicle(v);
+                if (r < 5) road->addVehicle(new Ambulance(vehicleIdCounter++, 0, 0, 0)); 
+                else if (r < 10) road->addVehicle(new PoliceCar(vehicleIdCounter++, 0, 0, 0)); 
+                else if (r < 15) road->addVehicle(new FireTruck(vehicleIdCounter++, 0, 0, 0));
+                else road->addVehicle(new NormalVehicle(vehicleIdCounter++, 0, 0, 0));
             }
         }
     }
@@ -195,10 +224,20 @@ void MainWindow::updateSimulation() {
 
         // IoT Synchronization (Enhanced Protocol)
         if (hwEnabled && currentStep % 5 == 0) {
-            QString lState = "R";
-            if (lights[0]->getState() == LightState::GREEN) lState = "G";
-            else if (lights[0]->getState() == LightState::YELLOW) lState = "Y";
+            QString lStates = "";
+            for (size_t i = 0; i < 4; ++i) {
+                if (lights[i]->getState() == LightState::GREEN) lStates += "G";
+                else if (lights[i]->getState() == LightState::YELLOW) lStates += "Y";
+                else lStates += "R";
+            }
             
+            // Check for Fire Truck
+            for (Road* r : roads) {
+                for (Vehicle* v : r->getAllVehicles()) {
+                    if (v->getType() == "FireTruck") emergencyType = 3;
+                }
+            }
+
             if (violationCarId != -1) {
                 static int lastViolator = -1;
                 if (violationCarId != lastViolator) {
@@ -207,7 +246,7 @@ void MainWindow::updateSimulation() {
                 }
             }
             
-            hwBridge->sendStatus(lState, totalCars, emergencyType, violationCarId);
+            hwBridge->sendStatus(lStates, totalCars, emergencyType, violationCarId);
         }
     }
     update();
@@ -303,6 +342,7 @@ void MainWindow::paintEvent(QPaintEvent *event) {
                 QColor bodyColor = QColor("#455a64");
                 if (v->getType() == "Ambulance") bodyColor = Qt::white;
                 else if (v->getType() == "Police") bodyColor = QColor("#0d47a1");
+                else if (v->getType() == "FireTruck") bodyColor = QColor("#d32f2f");
 
                 painter.setOpacity(0.3);
                 painter.setBrush(Qt::black);
