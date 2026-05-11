@@ -5,12 +5,20 @@
 using namespace std;
 
 
+enum VehicleState { APPROACHING, WAITING, CROSSING, EXITING };
+
 // Base Class: Vehicle (Demonstrates Abstraction and Encapsulation)
 class Vehicle {
 protected:
     int id;
     int arrivalTime;
     int waitingTime;
+    float posX, posY;
+    float speed;
+    float targetSpeed;
+    float angle;
+    VehicleState state;
+    int lane;
 
 public:
     Vehicle(int id, int arrivalTime);
@@ -23,6 +31,22 @@ public:
     void incrementWait();
     int getWaitingTime() const;
     int getId() const;
+
+    // Movement methods
+    void setPosition(float x, float y) { posX = x; posY = y; }
+    float getX() const { return posX; }
+    float getY() const { return posY; }
+    void setAngle(float a) { angle = a; }
+    float getAngle() const { return angle; }
+    void setSpeed(float s) { speed = s; }
+    float getSpeed() const { return speed; }
+    void setTargetSpeed(float s) { targetSpeed = s; }
+    void setState(VehicleState s) { state = s; }
+    VehicleState getState() const { return state; }
+    void setLane(int l) { lane = l; }
+    int getLane() const { return lane; }
+    
+    virtual void move();
 };
 
 // Derived Class: NormalVehicle (Demonstrates Inheritance)

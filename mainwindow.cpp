@@ -16,42 +16,75 @@ MainWindow::MainWindow(QWidget *parent)
     , isSmartMode(false)
 {
     ui->setupUi(this);
-    setWindowTitle("Smart Traffic Mega City Grid");
+    setWindowTitle("Smart Traffic AI Simulator");
     resize(1400, 900);
 
-    fixedStrategy = new FixedTimeStrategy(25);
-    smartStrategy = new SmartAdaptiveStrategy();
+    // Load Assets from Resources
+    pixNormal.load(":/assets/car_normal.png");
+    pixAmbulance.load(":/assets/car_ambulance.png");
+    pixPolice.load(":/assets/car_police.png");
 
-    // Initialize 6 Intersections (3 Columns x 2 Rows)
-    for (int i = 0; i < 6; ++i) {
-        Intersection* inter = new Intersection();
-        inter->addRoad(new Road("North"));
-        inter->addRoad(new Road("South"));
-        inter->addRoad(new Road("West"));
-        inter->addRoad(new Road("East"));
-        for(int l=0; l<4; ++l) inter->addLight(new TrafficLight());
-        
-        intersections.push_back(inter);
-        
-        TrafficController* ctrl = new TrafficController(inter);
-        ctrl->setStrategy(fixedStrategy);
-        controllers.push_back(ctrl);
-    }
+    fixedStrategy = new FixedTimeStrategy(150, 60, 30); 
+    smartStrategy = new AITrafficOptimizer();
 
-    // UI Control Overlay
+    // Initialize Single Intersection (Wide 6-lane layout)
+    Intersection* inter = new Intersection();
+    // North (South-bound): Center X = 790, Stop at Y = 270
+    inter->addRoad(new Road("North", 790, -100, 790, 270, 90));
+    // South (North-bound): Center X = 610, Stop at Y = 630
+    inter->addRoad(new Road("South", 610, 1000, 610, 630, 270));
+    // West (East-bound): Center Y = 360, Stop at X = 520
+    inter->addRoad(new Road("West", -100, 360, 520, 360, 0));
+    // East (West-bound): Center Y = 540, Stop at X = 880
+    inter->addRoad(new Road("East", 1500, 540, 880, 540, 180));
+
+    for(int l=0; l<4; ++l) inter->addLight(new TrafficLight());
+    intersections.push_back(inter);
+    
+    TrafficController* ctrl = new TrafficController(inter);
+    ctrl->setStrategy(fixedStrategy);
+    controllers.push_back(ctrl);
+
+    hwEnabled = true;
+    hwBridge = new HardwareBridge(this);
+    hwBridge->setTargetIP("192.168.1.100"); // Default ESP32 IP
+
+    // Modern Glassmorphism UI Control
     QWidget *overlay = new QWidget(this);
     QVBoxLayout *layout = new QVBoxLayout(overlay);
-    QPushButton *btnToggle = new QPushButton("Switch to Smart Mode", this);
-    btnToggle->setFixedSize(200, 40);
-    btnToggle->setStyleSheet("background-color: #2c3e50; color: white; border-radius: 10px; font-weight: bold;");
+    
+    QPushButton *btnToggle = new QPushButton("AI Mode: OFF", this);
+    btnToggle->setFixedSize(220, 45);
+    
+    QPushButton *btnHardware = new QPushButton("Hardware Sync: ON", this);
+    btnHardware->setFixedSize(220, 45);
+
+    QString btnStyle = 
+        "QPushButton {"
+        "  background: rgba(44, 62, 80, 0.9);"
+        "  color: #ecf0f1;"
+        "  border: 1px solid rgba(255,255,255,0.1);"
+        "  border-radius: 12px;"
+        "  font-family: 'Segoe UI';"
+        "  font-size: 14px;"
+        "  font-weight: 600;"
+        "}";
+
+    btnToggle->setStyleSheet(btnStyle);
+    btnHardware->setStyleSheet(btnStyle);
+    btnHardware->setStyleSheet("QPushButton { background: rgba(52, 152, 219, 0.9); color: white; border-radius: 12px; }");
+
     connect(btnToggle, &QPushButton::clicked, this, &MainWindow::toggleStrategy);
+    connect(btnHardware, &QPushButton::clicked, this, &MainWindow::toggleHardware);
+
     layout->addWidget(btnToggle);
+    layout->addWidget(btnHardware);
     overlay->setLayout(layout);
-    overlay->setGeometry(10, 10, 220, 100);
+    overlay->setGeometry(20, 20, 250, 150);
 
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &MainWindow::updateSimulation);
-    timer->start(250); 
+    timer->start(33); 
 }
 
 MainWindow::~MainWindow() {
@@ -68,25 +101,53 @@ void MainWindow::toggleStrategy() {
     for(auto c : controllers) c->setStrategy(isSmartMode ? static_cast<TrafficStrategy*>(smartStrategy) : static_cast<TrafficStrategy*>(fixedStrategy));
     
     if (isSmartMode) {
-        btn->setText("Switch to Fixed Mode");
-        btn->setStyleSheet("background-color: #e67e22; color: white; border-radius: 10px; font-weight: bold;");
+        btn->setText("AI Mode: ON");
+        btn->setStyleSheet(
+            "QPushButton {"
+            "  background: rgba(39, 174, 96, 0.9);"
+            "  color: white;"
+            "  border-radius: 12px;"
+            "  font-weight: bold;"
+            "  border: 1px solid rgba(255,255,255,0.3);"
+            "}"
+        );
     } else {
-        btn->setText("Switch to Smart Mode");
-        btn->setStyleSheet("background-color: #2c3e50; color: white; border-radius: 10px; font-weight: bold;");
+        btn->setText("AI Mode: OFF");
+        btn->setStyleSheet(
+            "QPushButton {"
+            "  background: rgba(44, 62, 80, 0.9);"
+            "  color: #ecf0f1;"
+            "  border-radius: 12px;"
+            "  font-weight: bold;"
+            "  border: 1px solid rgba(255,255,255,0.1);"
+            "}"
+        );
+    }
+}
+
+void MainWindow::toggleHardware() {
+    hwEnabled = !hwEnabled;
+    QPushButton* btn = qobject_cast<QPushButton*>(sender());
+    if (hwEnabled) {
+        btn->setText("Hardware Sync: ON");
+        btn->setStyleSheet("QPushButton { background: rgba(52, 152, 219, 0.9); color: white; border-radius: 12px; }");
+    } else {
+        btn->setText("Hardware Sync: OFF");
+        btn->setStyleSheet("QPushButton { background: rgba(44, 62, 80, 0.9); color: #ecf0f1; border-radius: 12px; }");
     }
 }
 
 void MainWindow::updateSimulation() {
     currentStep++;
 
-    // Random Arrivals (Increased to 22% for slightly more traffic)
+    // Random Arrivals
     for (auto inter : intersections) {
         for (Road* road : inter->getRoads()) {
-            if (rand() % 100 < 22) { 
+            if (rand() % 1000 < 15) { 
                 Vehicle* v;
                 int r = rand() % 100;
-                if (r < 15) v = new Ambulance(vehicleIdCounter++, currentStep); // 15% Ambulance
-                else if (r < 30) v = new PoliceCar(vehicleIdCounter++, currentStep); // 15% Police
+                if (r < 8) v = new Ambulance(vehicleIdCounter++, currentStep); 
+                else if (r < 16) v = new PoliceCar(vehicleIdCounter++, currentStep); 
                 else v = new NormalVehicle(vehicleIdCounter++, currentStep);
                 road->addVehicle(v);
             }
@@ -98,13 +159,34 @@ void MainWindow::updateSimulation() {
     for (auto inter : intersections) {
         auto& roads = inter->getRoads();
         auto& lights = inter->getLights();
-        for (size_t i = 0; i < roads.size(); ++i) {
-            if (lights[i]->getState() == LightState::GREEN && roads[i]->getVehicleCount() > 0) {
-                Vehicle* v = roads[i]->removeVehicle();
-                stats.recordVehiclePass(v->getWaitingTime());
-                delete v;
+        
+        bool isBusy = false;
+        int totalCars = 0;
+        int emergencyType = 0; // 0:None, 1:Amb, 2:Pol
+
+        for (Road* r : roads) {
+            totalCars += r->getVehicleCount();
+            for (Vehicle* v : r->getAllVehicles()) {
+                if (v->getState() == CROSSING) { 
+                    isBusy = true; 
+                    if (v->getType() == "Ambulance") emergencyType = 1;
+                    else if (v->getType() == "Police") emergencyType = 2;
+                }
             }
-            roads[i]->updateWaitingTimes();
+        }
+
+        for (size_t i = 0; i < roads.size(); ++i) {
+            bool isGreen = (lights[i]->getState() == LightState::GREEN);
+            bool isYellow = (lights[i]->getState() == LightState::YELLOW);
+            roads[i]->updatePositions(isGreen, isYellow, isBusy);
+        }
+
+        // IoT Sync
+        if (hwEnabled && currentStep % 5 == 0) {
+            QString lState = "R";
+            if (lights[0]->getState() == LightState::GREEN) lState = "G";
+            else if (lights[0]->getState() == LightState::YELLOW) lState = "Y";
+            hwBridge->sendStatus(lState, totalCars, emergencyType);
         }
     }
     update();
@@ -113,116 +195,129 @@ void MainWindow::updateSimulation() {
 void MainWindow::paintEvent(QPaintEvent *event) {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform);
 
-    // 1. Landscape
-    painter.fillRect(rect(), QColor("#2e7d32")); 
+    // 1. Ground Gradient
+    QLinearGradient grassGrad(0, 0, width(), height());
+    grassGrad.setColorAt(0, QColor("#1b5e20"));
+    grassGrad.setColorAt(1, QColor("#2e7d32"));
+    painter.fillRect(rect(), grassGrad);
 
-    int roadW = 80;
-    int cols = 3;
-    int rows = 2;
-    int xSpacing = width() / (cols + 1);
-    int ySpacing = height() / (rows + 1);
+    int roadW = 360; 
+    int centerX = 700;
+    int centerY = 450;
 
-    // 2. Buildings
-    painter.setPen(QPen(Qt::black, 1));
-    for (int x = 60; x < width(); x += 180) {
-        for (int y = 60; y < height(); y += 180) {
-            bool onRoad = false;
-            for(int i=1; i<=cols; ++i) if(abs(x - i*xSpacing) < 80) onRoad = true;
-            for(int j=1; j<=rows; ++j) if(abs(y - j*ySpacing) < 80) onRoad = true;
-
-            if (!onRoad) {
-                painter.setBrush(QColor("#546e7a"));
-                painter.drawRect(x, y, 60, 80);
-                painter.setBrush(QColor("#fff59d"));
-                for(int wx=x+8; wx<x+50; wx+=15) {
-                    for(int wy=y+10; wy<y+70; wy+=20) painter.drawRect(wx, wy, 8, 10);
-                }
-                painter.setBrush(QColor("#37474f"));
-                QPolygon roof; roof << QPoint(x-5, y) << QPoint(x+65, y) << QPoint(x+30, y-20);
-                painter.drawPolygon(roof);
-            }
-        }
-    }
-
-    // 3. Road Grid
+    // 2. High-Quality Asphalt
     painter.setPen(Qt::NoPen);
-    for (int i = 1; i <= cols; ++i) {
-        int x = i * xSpacing;
-        painter.setBrush(QColor("#212121")); painter.drawRect(x - roadW/2 - 4, 0, roadW + 8, height());
-        painter.setBrush(QColor("#37474f")); painter.drawRect(x - roadW/2, 0, roadW, height());
-    }
-    for (int j = 1; j <= rows; ++j) {
-        int y = j * ySpacing;
-        painter.setBrush(QColor("#212121")); painter.drawRect(0, y - roadW/2 - 4, width(), roadW + 8);
-        painter.setBrush(QColor("#37474f")); painter.drawRect(0, y - roadW/2, width(), roadW);
-    }
-    painter.setPen(QPen(QColor("#fbc02d"), 3, Qt::DashLine));
-    for (int i = 1; i <= cols; ++i) painter.drawLine(i * xSpacing, 0, i * xSpacing, height());
-    for (int j = 1; j <= rows; ++j) painter.drawLine(0, j * ySpacing, width(), j * ySpacing);
+    painter.setBrush(QColor("#263238"));
+    painter.drawRect(0, centerY - 180, width(), 360); // Horizontal
+    painter.drawRect(centerX - 180, 0, 360, height()); // Vertical
 
-    // 4. Detailed Assets
-    struct P { int x, y, dx, dy, lx, ly; };
-    for (int j = 0; j < rows; ++j) {
-        for (int i = 0; i < cols; ++i) {
-            int cX = (i + 1) * xSpacing;
-            int cY = (j + 1) * ySpacing;
-            Intersection* inter = intersections[j * cols + i];
-            auto& roads = inter->getRoads();
-            auto& lights = inter->getLights();
-            P pos[4] = { {cX-20, cY-60, 0, -1, cX-55, cY-55}, {cX+20, cY+60, 0, 1, cX+55, cY+55}, {cX-60, cY+20, -1, 0, cX-55, cY-55}, {cX+60, cY-20, 1, 0, cX+55, cY+55} };
+    // Road Markings (White dashed for lanes)
+    painter.setPen(QPen(Qt::white, 2, Qt::DashLine));
+    // Horizontal Lanes
+    painter.drawLine(0, centerY - 120, width(), centerY - 120);
+    painter.drawLine(0, centerY - 60, width(), centerY - 60);
+    painter.drawLine(0, centerY + 60, width(), centerY + 60);
+    painter.drawLine(0, centerY + 120, width(), centerY + 120);
+    // Vertical Lanes
+    painter.drawLine(centerX - 120, 0, centerX - 120, height());
+    painter.drawLine(centerX - 60, 0, centerX - 60, height());
+    painter.drawLine(centerX + 60, 0, centerX + 60, height());
+    painter.drawLine(centerX + 120, 0, centerX + 120, height());
 
-            for (int k = 0; k < 4; ++k) {
-                painter.setBrush(QColor("#212121"));
-                painter.drawRoundedRect(pos[k].lx-12, pos[k].ly-12, 24, 24, 3, 3);
-                painter.setBrush(lights[k]->getState() == LightState::GREEN ? Qt::green : Qt::red);
-                painter.drawEllipse(pos[k].lx-6, pos[k].ly-6, 12, 12);
+    // Yellow Center Lines (Solid)
+    painter.setPen(QPen(QColor("#fbc02d"), 4));
+    painter.drawLine(0, centerY, width(), centerY);
+    painter.drawLine(centerX, 0, centerX, height());
 
-                auto vqs = roads[k]->getVehicles();
-                int off = 0;
-                while (!vqs.empty()) {
-                    Vehicle* v = vqs.front(); vqs.pop();
-                    int vx, vy, lO = v->isPriority() ? 15 : -15;
-                    if (pos[k].dy != 0) { vx = pos[k].x + lO; vy = pos[k].y + (pos[k].dy * off * 35); }
-                    else { vx = pos[k].x + (pos[k].dx * off * 35); vy = pos[k].y + lO; }
+    // Emergency Lane Highlights (Outermost lane)
+    painter.setBrush(QColor(255, 0, 0, 40));
+    painter.drawRect(0, centerY - 180, width(), 60); // West-bound Outer
+    painter.drawRect(0, centerY + 120, width(), 60); // East-bound Outer
+    painter.drawRect(centerX - 180, 0, 60, height()); // South-bound Outer? No.
+    // Let's be precise:
+    // North Road (moves South): Lanes 700-880. Outer is 820-880.
+    painter.drawRect(centerX + 120, 0, 60, height()); 
+    // South Road (moves North): Lanes 520-700. Outer is 520-580.
+    painter.drawRect(centerX - 180, 0, 60, height());
 
-                    // Car Body
-                    painter.setBrush((v->getType()=="Ambulance")?Qt::white:(v->getType()=="Police"?QColor("#0d47a1"):QColor("#455a64")));
-                    painter.setPen(QPen(Qt::black, 1));
-                    painter.drawRoundedRect(vx-12, vy-12, 24, 24, 4, 4);
+    // Intersection Box
+    painter.setBrush(QColor("#1a237e")); // Darker blue center
+    painter.drawRect(centerX - 180, centerY - 180, 360, 360);
+    painter.setPen(QPen(Qt::white, 4));
+    painter.drawRect(centerX - 180, centerY - 180, 360, 360);
 
-                    // Details: Windows
-                    painter.setBrush(QColor(255, 255, 255, 180));
-                    if (pos[k].dy != 0) painter.drawRect(vx-8, vy+(pos[k].dy==-1?-8:2), 16, 6);
-                    else painter.drawRect(vx+(pos[k].dx==1?2:-8), vy-8, 6, 16);
+    // 3. Vehicles & Lights
+    for (auto inter : intersections) {
+        auto& roads = inter->getRoads();
+        auto& lights = inter->getLights();
+        
+        QPoint lPos[4] = { 
+            {centerX + 190, centerY - 220}, // North
+            {centerX - 220, centerY + 190}, // South
+            {centerX - 220, centerY - 220}, // West
+            {centerX + 190, centerY + 190}  // East
+        };
 
-                    // Details: Headlights & Tail lights
-                    painter.setBrush(QColor("#ffee58")); // Front
-                    if (pos[k].dy == -1) { painter.drawEllipse(vx-10, vy-13, 4, 4); painter.drawEllipse(vx+6, vy-13, 4, 4); }
-                    else if (pos[k].dy == 1) { painter.drawEllipse(vx-10, vy+9, 4, 4); painter.drawEllipse(vx+6, vy+9, 4, 4); }
-                    
-                    painter.setBrush(Qt::red); // Back
-                    if (pos[k].dy == -1) { painter.drawRect(vx-10, vy+9, 4, 2); painter.drawRect(vx+6, vy+9, 4, 2); }
-                    else if (pos[k].dy == 1) { painter.drawRect(vx-10, vy-11, 4, 2); painter.drawRect(vx+6, vy-11, 4, 2); }
+        for (size_t i = 0; i < 4; ++i) {
+            painter.setBrush(QColor("#121212"));
+            painter.drawRoundedRect(lPos[i].x(), lPos[i].y(), 30, 30, 8, 8);
+            
+            QColor lightColor;
+            if (lights[i]->getState() == LightState::GREEN) lightColor = QColor("#00e676");
+            else if (lights[i]->getState() == LightState::YELLOW) lightColor = QColor("#ffeb3b");
+            else lightColor = QColor("#ff1744");
+            
+            painter.setBrush(lightColor);
+            painter.drawEllipse(lPos[i].x() + 5, lPos[i].y() + 5, 20, 20);
+        }
 
-                    // Details: Side Mirrors
-                    painter.setBrush(Qt::black);
-                    if (pos[k].dy != 0) { painter.drawRect(vx-15, vy-3, 3, 6); painter.drawRect(vx+12, vy-3, 3, 6); }
-                    else { painter.drawRect(vx-3, vy-15, 6, 3); painter.drawRect(vx-3, vy+12, 6, 3); }
+        for (Road* road : roads) {
+            for (Vehicle* v : road->getAllVehicles()) {
+                painter.save();
+                painter.translate(v->getX(), v->getY());
+                painter.rotate(v->getAngle());
+                
+                QColor bodyColor = QColor("#455a64");
+                if (v->getType() == "Ambulance") bodyColor = Qt::white;
+                else if (v->getType() == "Police") bodyColor = QColor("#0d47a1");
 
-                    if (v->isPriority()) {
-                        bool flash = (currentStep/2)%2 == 0;
-                        painter.setBrush(flash?Qt::red:Qt::blue);
-                        painter.drawRect(vx-6, vy-15, 12, 5);
-                    }
-                    off++; if (off > 5) break;
+                painter.setOpacity(0.3);
+                painter.setBrush(Qt::black);
+                painter.drawRoundedRect(-28, -18, 56, 36, 12, 12);
+                painter.setOpacity(1.0);
+
+                painter.setBrush(bodyColor);
+                painter.setPen(QPen(Qt::black, 2));
+                painter.drawRoundedRect(-25, -15, 50, 30, 10, 10);
+
+                painter.setBrush(QColor("#263238"));
+                painter.drawRect(-15, -12, 25, 24); 
+                
+                if (v->isPriority()) {
+                    bool flash = (currentStep / 4) % 2 == 0;
+                    painter.setBrush(flash ? Qt::red : Qt::blue);
+                    painter.drawEllipse(-5, -12, 10, 10);
                 }
+                painter.restore();
             }
         }
     }
 
-    // 5. HUD
+    // 4. Glass HUD
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QColor(0, 0, 0, 180));
+    painter.drawRoundedRect(20, height() - 100, 620, 80, 20, 20);
     painter.setPen(Qt::white);
     painter.setFont(QFont("Segoe UI", 12, QFont::Bold));
-    painter.drawText(600, 30, "ULTIMATE CITY SIMULATOR | Step: " + QString::number(currentStep));
+    painter.drawText(40, height() - 65, "SMART CITY - TRAFFIC AI OPTIMIZER");
+    painter.setFont(QFont("Segoe UI", 10));
+    
+    QString statusMsg = "Mode: " + QString(isSmartMode ? "AI Neural" : "Fixed Rotation");
+    TrafficStrategy* currentStrategy = isSmartMode ? static_cast<TrafficStrategy*>(smartStrategy) : static_cast<TrafficStrategy*>(fixedStrategy);
+    statusMsg += " | IoT: " + QString(hwEnabled ? "LINKED" : "OFF");
+    statusMsg += " | " + QString::fromStdString(currentStrategy->getLastReason());
+    
+    painter.drawText(40, height() - 40, statusMsg);
 }

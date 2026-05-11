@@ -17,11 +17,15 @@ public:
 class FixedTimeStrategy : public TrafficStrategy {
 private:
     int greenDuration;
+    int yellowDuration;
+    int allRedDuration;
     int currentActiveRoad;
     int lastSwitchTime;
+    bool inYellow;
+    bool inAllRed;
 
 public:
-    FixedTimeStrategy(int greenDuration);
+    FixedTimeStrategy(int greenDuration, int yellowDuration, int allRedDuration);
     void update(Intersection* intersection, int currentTime) override;
 };
 

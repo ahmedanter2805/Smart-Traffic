@@ -1,10 +1,23 @@
 #include "Vehicle.h"
+#include <cmath>
 using namespace std;
 
 
-Vehicle::Vehicle(int id, int arrivalTime) : id(id), arrivalTime(arrivalTime), waitingTime(0) {}
+Vehicle::Vehicle(int id, int arrivalTime) 
+    : id(id), arrivalTime(arrivalTime), waitingTime(0), posX(0), posY(0), speed(0), targetSpeed(2.0f), angle(0), state(APPROACHING) {}
 
 Vehicle::~Vehicle() {}
+
+void Vehicle::move() {
+    float rad = angle * 3.14159f / 180.0f;
+    posX += cos(rad) * speed;
+    posY += sin(rad) * speed;
+    
+    // Smooth acceleration/deceleration
+    if (speed < targetSpeed) speed += 0.1f;
+    else if (speed > targetSpeed) speed -= 0.2f;
+    if (speed < 0) speed = 0;
+}
 
 void Vehicle::incrementWait() {
     waitingTime++;

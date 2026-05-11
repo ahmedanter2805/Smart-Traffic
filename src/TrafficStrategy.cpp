@@ -2,22 +2,44 @@
 #include <iostream>
 
 // FixedTimeStrategy implementation
-FixedTimeStrategy::FixedTimeStrategy(int duration) 
-    : greenDuration(duration), currentActiveRoad(0), lastSwitchTime(0) {}
+FixedTimeStrategy::FixedTimeStrategy(int green, int yellow, int allRed) 
+    : greenDuration(green), yellowDuration(yellow), allRedDuration(allRed), 
+      currentActiveRoad(0), lastSwitchTime(0), inYellow(false), inAllRed(false) {}
 
 void FixedTimeStrategy::update(Intersection* intersection, int currentTime) {
     auto& lights = intersection->getLights();
-    
-    // Switch road if duration passed
-    if (currentTime - lastSwitchTime >= greenDuration) {
-        currentActiveRoad = (currentActiveRoad + 1) % lights.size();
-        lastSwitchTime = currentTime;
-    }
-    lastReason = "Fixed Rotation (Next in " + to_string(greenDuration - (currentTime - lastSwitchTime)) + "s)";
+    int elapsed = currentTime - lastSwitchTime;
 
-    // Set lights
+    if (!inYellow && !inAllRed) {
+        if (elapsed >= greenDuration) { inYellow = true; lastSwitchTime = currentTime; }
+    } else if (inYellow) {
+        if (elapsed >= yellowDuration) { inYellow = false; inAllRed = true; lastSwitchTime = currentTime; }
+    } else if (inAllRed) {
+        if (elapsed >= allRedDuration) {
+            inAllRed = false;
+            currentActiveRoad = (currentActiveRoad == 0) ? 1 : 0; // Toggle between Axis 0 and 1
+            lastSwitchTime = currentTime;
+        }
+    }
+
+    // Phase 0: North & South (Lights 0,1) | Phase 1: West & East (Lights 2,3)
     for (size_t i = 0; i < lights.size(); ++i) {
-        lights[i]->setState(i == (size_t)currentActiveRoad ? LightState::GREEN : LightState::RED);
+        bool isThisAxis = (currentActiveRoad == 0) ? (i < 2) : (i >= 2);
+        
+        if (inAllRed) {
+            lights[i]->setState(LightState::RED);
+            lastReason = "CLEARANCE: All Red";
+        } else if (inYellow) {
+            if (isThisAxis) {
+                lights[i]->setState(LightState::YELLOW);
+                lastReason = "CAUTION: Switching Axis...";
+            } else {
+                lights[i]->setState(LightState::RED);
+            }
+        } else {
+            lights[i]->setState(isThisAxis ? LightState::GREEN : LightState::RED);
+            lastReason = "PASS: " + string(currentActiveRoad == 0 ? "North-South Axis" : "East-West Axis");
+        }
     }
 }
 

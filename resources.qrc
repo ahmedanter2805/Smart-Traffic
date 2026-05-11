@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>assets/car_normal.png</file>
+        <file>assets/car_ambulance.png</file>
+        <file>assets/car_police.png</file>
+    </qresource>
+</RCC>

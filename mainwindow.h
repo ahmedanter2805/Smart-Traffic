@@ -5,10 +5,13 @@
 #include <QTimer>
 #include <QPainter>
 #include <vector>
+#include <QPixmap>
 #include "Intersection.h"
 #include "TrafficController.h"
 #include "Statistics.h"
 #include "TrafficStrategy.h"
+#include "AITrafficOptimizer.h"
+#include "HardwareBridge.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -27,22 +30,31 @@ protected:
 private slots:
     void updateSimulation();
     void toggleStrategy();
+    void toggleHardware();
 
 private:
     Ui::MainWindow *ui;
     
-    // Mega City: 6 Intersections (3x2 Grid)
+    // City Simulation: Single Complex Intersection
     std::vector<Intersection*> intersections;
     std::vector<TrafficController*> controllers;
     
     FixedTimeStrategy* fixedStrategy;
-    SmartAdaptiveStrategy* smartStrategy;
+    AITrafficOptimizer* smartStrategy;
     Statistics stats;
     
     QTimer *timer;
     int currentStep;
     int vehicleIdCounter;
     bool isSmartMode;
+    
+    HardwareBridge* hwBridge;
+    bool hwEnabled = false;
+
+    // Assets
+    QPixmap pixNormal;
+    QPixmap pixAmbulance;
+    QPixmap pixPolice;
 };
 
 #endif // MAINWINDOW_H
