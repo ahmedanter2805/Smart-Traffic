@@ -16,14 +16,15 @@ public:
         targetAddress = QHostAddress(ip);
     }
 
-    void sendStatus(const QString& lightState, int carCount, int emergencyType = 0) {
+    void sendStatus(const QString& lightState, int carCount, int emergencyType = 0, int violatorId = -1) {
         if (targetAddress.isNull()) return;
 
-        // Protocol: L:[G|Y|R]|C:[count]|E:[type]
-        QString data = QString("L:%1|C:%2|E:%3")
+        // Protocol: L:[State]|C:[Count]|E:[Type]|V:[ViolatorID]
+        QString data = QString("L:%1|C:%2|E:%3|V:%4")
                         .arg(lightState)
                         .arg(carCount)
-                        .arg(emergencyType);
+                        .arg(emergencyType)
+                        .arg(violatorId);
 
         QByteArray datagram = data.toUtf8();
         udpSocket->writeDatagram(datagram, targetAddress, 4210);

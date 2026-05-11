@@ -47,7 +47,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     hwEnabled = true;
     hwBridge = new HardwareBridge(this);
-    hwBridge->setTargetIP("192.168.1.100"); // Default ESP32 IP
+    hwBridge->setTargetIP("192.168.1.9"); // Corrected ESP32 IP
 
     // Modern Glassmorphism UI Control
     QWidget *overlay = new QWidget(this);
@@ -175,18 +175,39 @@ void MainWindow::updateSimulation() {
             }
         }
 
+        int violationCarId = -1;
+
         for (size_t i = 0; i < roads.size(); ++i) {
             bool isGreen = (lights[i]->getState() == LightState::GREEN);
             bool isYellow = (lights[i]->getState() == LightState::YELLOW);
+            
+            // Detection of Red Light Violation
+            if (!isGreen && !isYellow) {
+                for (Vehicle* v : roads[i]->getAllVehicles()) {
+                    if (v->getState() == CROSSING) {
+                        violationCarId = v->getId();
+                    }
+                }
+            }
+            
             roads[i]->updatePositions(isGreen, isYellow, isBusy);
         }
 
-        // IoT Sync
+        // IoT Synchronization (Enhanced Protocol)
         if (hwEnabled && currentStep % 5 == 0) {
             QString lState = "R";
             if (lights[0]->getState() == LightState::GREEN) lState = "G";
             else if (lights[0]->getState() == LightState::YELLOW) lState = "Y";
-            hwBridge->sendStatus(lState, totalCars, emergencyType);
+            
+            if (violationCarId != -1) {
+                static int lastViolator = -1;
+                if (violationCarId != lastViolator) {
+                    violationCount++;
+                    lastViolator = violationCarId;
+                }
+            }
+            
+            hwBridge->sendStatus(lState, totalCars, emergencyType, violationCarId);
         }
     }
     update();
@@ -317,6 +338,7 @@ void MainWindow::paintEvent(QPaintEvent *event) {
     QString statusMsg = "Mode: " + QString(isSmartMode ? "AI Neural" : "Fixed Rotation");
     TrafficStrategy* currentStrategy = isSmartMode ? static_cast<TrafficStrategy*>(smartStrategy) : static_cast<TrafficStrategy*>(fixedStrategy);
     statusMsg += " | IoT: " + QString(hwEnabled ? "LINKED" : "OFF");
+    statusMsg += " | Tickets: " + QString::number(violationCount);
     statusMsg += " | " + QString::fromStdString(currentStrategy->getLastReason());
     
     painter.drawText(40, height() - 40, statusMsg);

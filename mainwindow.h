@@ -46,6 +46,7 @@ private:
     QTimer *timer;
     int currentStep;
     int vehicleIdCounter;
+    int violationCount = 0;
     bool isSmartMode;
     
     HardwareBridge* hwBridge;
